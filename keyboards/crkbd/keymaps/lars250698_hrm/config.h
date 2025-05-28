@@ -29,17 +29,19 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #define QUICK_TAP_TERM 100
 #define QUICK_TAP_TERM_PER_KEY
-#define TAPPING_TERM 150
+#define TAPPING_TERM 170
 #define FLOW_TAP_TERM 150
 
 #define PERMISSIVE_HOLD
 #define CHORDAL_HOLD
 
 // Enable auto shift instead of home row mod shifting.
-// Disables shift optimizations for home row mods.
-#define AUTO_SHIFT
+//#define AUTO_SHIFT
 
-#ifndef AUTO_SHIFT
+// Enables shift optimizations for home row mods.
+// #define HRM_SHIFT
+
+#ifdef HRM_SHIFT
 #define TAPPING_TERM_SHIFT 140
 #define TAPPING_TERM_PER_KEY
 #define RETRO_TAPPING
@@ -47,11 +49,18 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define PERMISSIVE_HOLD_PER_KEY
 #endif
 
+#ifndef HRM_SHIFT
+#define DOUBLE_TAP_SHIFT_TURNS_ON_CAPS_WORD
+#define TAPPING_TERM_PER_KEY
+#define TAPPING_TERM_SHIFT 300
+#endif
+
 #ifdef AUTO_SHIFT
 #define AUTO_SHIFT_TIMEOUT 135
 #define RETRO_SHIFT 500
 #define NO_AUTO_SHIFT_TAB
 #endif
+
 
 #define CAPS_WORD_INVERT_ON_SHIFT
 

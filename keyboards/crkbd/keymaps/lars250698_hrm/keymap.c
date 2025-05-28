@@ -30,12 +30,16 @@
 #define LT_ENT LT(1,KC_ENT)
 #define LT_TAB LT(2,KC_TAB)
 
+// One-shot modifiers
+#define OSM_RALT OSM(MOD_RALT)
+#define OSM_LSFT OSM(MOD_LSFT)
+
 const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
     [0] = LAYOUT_split_3x6_3_ex2(
-        KC_LBRC, KC_Q,   KC_W,   KC_F,   KC_P,   KC_B,   KC_GRV,   KC_SLEP, KC_J,    KC_L,    KC_U,    KC_Y,    KC_SCLN, KC_RBRC,
-        CW_TOGG, HOME_A, HOME_R, HOME_S, HOME_T, KC_G,   MO(3),    MO(3),   KC_M,    HOME_N,  HOME_E,  HOME_I,  HOME_O,  KC_QUOT,
-        KC_LPRN, KC_Z,   KC_X,   KC_C,   KC_D,   KC_V,                      KC_K,    KC_H,    KC_COMM, KC_DOT,  KC_SLSH, KC_RPRN,
-                                 KC_ESC, KC_SPC, LT_TAB,                    LT_ENT,  KC_BSPC, OSM(MOD_RALT)
+        KC_LBRC, KC_Q,   KC_W,     KC_F,     KC_P,   KC_B,   KC_GRV,   KC_SLEP, KC_J,    KC_L,     KC_U,    KC_Y,    KC_SCLN, KC_RBRC,
+        KC_ESC,  HOME_A, HOME_R,   HOME_S,   HOME_T, KC_G,   MO(3),    MO(3),   KC_M,    HOME_N,   HOME_E,  HOME_I,  HOME_O,  KC_QUOT,
+        KC_LPRN, KC_Z,   KC_X,     KC_C,     KC_D,   KC_V,                      KC_K,    KC_H,     KC_COMM, KC_DOT,  KC_SLSH, KC_RPRN,
+                                   OSM_RALT, KC_SPC, LT_TAB,                    LT_ENT,  OSM_LSFT, KC_BSPC
     ),
     [1] = LAYOUT_split_3x6_3_ex2(
         KC_NO, KC_1,    KC_2,    KC_3,    KC_4,    KC_5,    KC_TRNS,  KC_PGUP, KC_6,    KC_7,      KC_8,    KC_9,       KC_0,    KC_NO,
@@ -77,7 +81,7 @@ uint16_t get_quick_tap_term(uint16_t keycode, keyrecord_t *record) {
 
 bool is_flow_tap_key(uint16_t keycode) {
     switch (keycode) {
-        #ifndef AUTO_SHIFT
+        #ifdef HRM_SHIFT
         case HOME_S:
         case HOME_E:
         case HOME_UP:
@@ -111,7 +115,7 @@ bool get_custom_auto_shifted_key(uint16_t keycode, keyrecord_t *record) {
 }
 #endif
 
-#ifndef AUTO_SHIFT
+#ifdef HRM_SHIFT
 uint16_t get_tapping_term(uint16_t keycode, keyrecord_t *record) {
     switch (keycode) {
         case HOME_S:
@@ -150,6 +154,19 @@ bool get_retro_tapping(uint16_t keycode, keyrecord_t *record) {
     }
 }
 #endif
+
+#ifndef HRM_SHIFT
+uint16_t get_tapping_term(uint16_t keycode, keyrecord_t *record) {
+    switch (keycode) {
+        case KC_LSFT:
+        case OSM(MOD_LSFT):
+            return TAPPING_TERM_SHIFT;
+        default:
+            return TAPPING_TERM;
+    }
+}
+#endif
+
 
 bool rgb_matrix_indicators_advanced_user(uint8_t led_min, uint8_t led_max) {
     for (uint8_t i = led_min; i < led_max; i++) {
