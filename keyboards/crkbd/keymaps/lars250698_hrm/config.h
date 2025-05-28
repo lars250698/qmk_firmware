@@ -48,7 +48,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #endif
 
 #ifdef AUTO_SHIFT
-#define AUTO_SHIFT_TIMEOUT 120
+#define AUTO_SHIFT_TIMEOUT 135
 #define RETRO_SHIFT 500
 #define NO_AUTO_SHIFT_TAB
 #endif
