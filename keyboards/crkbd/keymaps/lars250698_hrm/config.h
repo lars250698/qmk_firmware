@@ -41,6 +41,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // Enables shift optimizations for home row mods.
 // #define HRM_SHIFT
 
+// Enables dedicated shift
+#define DEDICATED_SHIFT
+
 #ifdef HRM_SHIFT
 #define TAPPING_TERM_SHIFT 140
 #define TAPPING_TERM_PER_KEY
@@ -49,7 +52,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define PERMISSIVE_HOLD_PER_KEY
 #endif
 
-#ifndef HRM_SHIFT
+#ifdef DEDICATED_SHIFT
 #define DOUBLE_TAP_SHIFT_TURNS_ON_CAPS_WORD
 #define TAPPING_TERM_PER_KEY
 #define TAPPING_TERM_SHIFT 300
