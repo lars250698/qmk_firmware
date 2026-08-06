@@ -45,6 +45,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #define LAYER_LOCK_IDLE_TIMEOUT 60000
 
+#define SPLIT_TRANSACTION_IDS_USER SYNC_STATE
+
 #ifdef RGBLIGHT_ENABLE
     #define RGBLIGHT_EFFECT_BREATHING
     #define RGBLIGHT_EFFECT_RAINBOW_MOOD

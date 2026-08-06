@@ -1,8 +1,54 @@
 #include QMK_KEYBOARD_H
 #include "os_detection.h"
+#include "transactions.h"
 #if __has_include("keymap.h")
 #    include "keymap.h"
 #endif
+
+typedef struct {
+    os_variant_t os;
+    bool         caps_word;
+} sync_payload_t;
+
+static sync_payload_t g_synced_state = { OS_UNSURE, false };
+
+void sync_state_slave_handler(uint8_t in_buflen, const void *in_data, uint8_t out_buflen, void *out_data) {
+    if (in_buflen == sizeof(sync_payload_t)) {
+        memcpy(&g_synced_state, in_data, sizeof(sync_payload_t));
+    }
+}
+
+void keyboard_post_init_user(void) {
+    transaction_register_rpc(SYNC_STATE, sync_state_slave_handler);
+}
+
+void housekeeping_task_user(void) {
+    if (!is_keyboard_master()) return;
+
+    static sync_payload_t last_sent = { OS_UNSURE, false };
+    static uint32_t       last_try  = 0;
+
+    sync_payload_t current = {
+        .os        = detected_host_os(),
+        .caps_word = is_caps_word_on(),
+    };
+
+    if (memcmp(&current, &last_sent, sizeof(current)) != 0 && timer_elapsed32(last_try) > 20) {
+        if (transaction_rpc_send(SYNC_STATE, sizeof(current), &current)) {
+            last_sent      = current;
+            g_synced_state = current;
+        }
+        last_try = timer_read32();
+    }
+}
+
+static os_variant_t synced_host_os(void) {
+    return is_keyboard_master() ? detected_host_os() : g_synced_state.os;
+}
+
+static bool synced_caps_word(void) {
+    return is_keyboard_master() ? is_caps_word_on() : g_synced_state.caps_word;
+}
 
 enum custom_keycodes {
     DE_AE = SAFE_RANGE, // Ä
@@ -10,7 +56,8 @@ enum custom_keycodes {
     DE_UE,              // Ü
     DE_SS,              // ß
     DE_EURO,
-    DE_PARA
+    DE_PARA,
+    KC_WIN
 };
 
 // Left-hand home row mods
@@ -84,7 +131,7 @@ combo_t key_combos[] = {
 const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
     [0] = LAYOUT_split_3x6_3_ex2(
         KC_LBRC, KC_Q, KC_W, KC_F,   KC_P,   KC_B,   KC_DEL,   KC_SLEP,  KC_J,   KC_L,     KC_U,    KC_Y,   KC_SCLN, KC_RBRC,
-        KC_GRV,  HM_A, HM_R, HM_S,   HM_T,   KC_G,   TG(1),    KC_LGUI,  KC_M,   HM_N,     HM_E,    HM_I,   HM_O,    KC_QUOT,
+        KC_GRV,  HM_A, HM_R, HM_S,   HM_T,   KC_G,   TG(1),    KC_WIN,  KC_M,   HM_N,     HM_E,    HM_I,   HM_O,    KC_QUOT,
         KC_LPRN, KC_Z, KC_X, KC_C,   KC_D,   KC_V,                       KC_K,   KC_H,     KC_COMM, KC_DOT, KC_SLSH, KC_RPRN,
                              KC_ESC, KC_SPC, LT_TAB,                     LT_ENT, OSM_LSFT, KC_BSPC
     ),
@@ -101,10 +148,10 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
                                  KC_TRNS, KC_TRNS, KC_TRNS,               MO(3),   KC_TRNS, KC_TRNS
     ),
     [3] = LAYOUT_split_3x6_3_ex2(
-        KC_F1,   KC_F2,   KC_F3,   KC_F4,   KC_F5,   KC_F6, KC_NO, QK_BOOT, KC_F7,   KC_F8,   KC_F9,   KC_F10,  KC_F11,  KC_F12,
-        KC_NO,   KC_LGUI, HM_MUTE, HM_VOLD, HM_VOLU, KC_NO, KC_NO, KC_NO,   KC_NO,   HM_MPRV, HM_MPLY, HM_MNXT, KC_RGUI, KC_NO,
-        KC_NO,   KC_NO,   KC_NO,   KC_NO,   KC_NO,   KC_NO,                 KC_NO,   KC_NO,   KC_NO,   KC_NO,   KC_NO,   KC_NO,
-                                   KC_NO,   KC_NO,   KC_TRNS,               KC_TRNS, KC_NO,   KC_NO
+        KC_F1,   KC_F2,   KC_F3,   KC_F4,   KC_F5,   KC_F6, QK_BOOT, QK_BOOT, KC_F7,   KC_F8,   KC_F9,   KC_F10,  KC_F11,  KC_F12,
+        KC_NO,   KC_LGUI, HM_MUTE, HM_VOLD, HM_VOLU, KC_NO, KC_NO,   KC_NO,   KC_NO,   HM_MPRV, HM_MPLY, HM_MNXT, KC_RGUI, KC_NO,
+        KC_NO,   KC_NO,   KC_NO,   KC_NO,   KC_NO,   KC_NO,                   KC_NO,   KC_NO,   KC_NO,   KC_NO,   KC_NO,   KC_NO,
+                                   KC_NO,   KC_NO,   KC_TRNS,                 KC_TRNS, KC_NO,   KC_NO
     ),
 };
 
@@ -167,18 +214,26 @@ bool rgb_matrix_indicators_advanced_user(uint8_t led_min, uint8_t led_max) {
     for (uint8_t i = led_min; i < led_max; i++) {
         switch(get_highest_layer(layer_state|default_layer_state)) {
             case 3:
-                rgb_matrix_set_color(i, RGB_YELLOW);
+                rgb_matrix_set_color(i, RGB_ORANGE);
                 break;
             case 2:
-                rgb_matrix_set_color(i, RGB_BLUE);
+                rgb_matrix_set_color(i, RGB_PURPLE);
                 break;
             case 1:
                 rgb_matrix_set_color(i, RGB_GREEN);
                 break;
+            case 0:
+                switch (synced_host_os()) {
+                    case OS_MACOS:   rgb_matrix_set_color(i, RGB_WHITE);  break;
+                    case OS_WINDOWS: rgb_matrix_set_color(i, RGB_BLUE); break;
+                    case OS_LINUX:   rgb_matrix_set_color(i, RGB_YELLOW); break;
+                    default: break;
+                }
+                break;
             default:
                 break;
         }
-        if (host_keyboard_led_state().caps_lock) {
+        if (host_keyboard_led_state().caps_lock || synced_caps_word()) {
             rgb_matrix_set_color(i, RGB_RED);
         }
     }
@@ -186,6 +241,11 @@ bool rgb_matrix_indicators_advanced_user(uint8_t led_min, uint8_t led_max) {
 }
 
 bool process_detected_host_os_user(os_variant_t detected_os) {
+    bool is_mac = (detected_os != OS_WINDOWS && detected_os != OS_LINUX);
+
+    keymap_config.swap_lctl_lgui = !is_mac;
+    keymap_config.swap_rctl_rgui = !is_mac;
+
     if (detected_os == OS_LINUX) {
         set_unicode_input_mode(UNICODE_MODE_LINUX);
     }
@@ -406,6 +466,14 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
                 } else {
                     register_unicode(0x00A7);
                 }
+            }
+            return false;
+
+        case KC_WIN: // Always LGUI, even when swapped
+            if (record->event.pressed) {
+                register_code(KC_LGUI);
+            } else {
+                unregister_code(KC_LGUI);
             }
             return false;
     }
