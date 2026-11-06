@@ -131,7 +131,7 @@ combo_t key_combos[] = {
 const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
     [0] = LAYOUT_split_3x6_3_ex2(
         KC_LBRC, KC_Q, KC_W, KC_F,   KC_P,   KC_B,   KC_DEL,   KC_SLEP,  KC_J,   KC_L,     KC_U,    KC_Y,   KC_SCLN, KC_RBRC,
-        KC_GRV,  HM_A, HM_R, HM_S,   HM_T,   KC_G,   TG(1),    KC_WIN,  KC_M,   HM_N,     HM_E,    HM_I,   HM_O,    KC_QUOT,
+        KC_GRV,  HM_A, HM_R, HM_S,   HM_T,   KC_G,   KC_WIN,   TG(1),    KC_M,   HM_N,     HM_E,    HM_I,   HM_O,    KC_QUOT,
         KC_LPRN, KC_Z, KC_X, KC_C,   KC_D,   KC_V,                       KC_K,   KC_H,     KC_COMM, KC_DOT, KC_SLSH, KC_RPRN,
                              KC_ESC, KC_SPC, LT_TAB,                     LT_ENT, OSM_LSFT, KC_BSPC
     ),
